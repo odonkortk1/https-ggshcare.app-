@@ -16,8 +16,15 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
+  // Ensure path formatting does not break full URLs
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  const url = API_BASE ? `${API_BASE}${cleanPath}` : cleanPath;
+  
+  // Construct absolute URL safely
+  let url = cleanPath;
+  if (API_BASE) {
+    const base = API_BASE.replace(/\/+$/, ''); // Remove trailing slashes from base
+    url = `${base}${cleanPath}`;
+  }
 
   const res = await fetch(url, {
     method,
@@ -46,4 +53,4 @@ export const api = {
   put: (path, body, opts) => request(path, { ...opts, method: 'PUT', body }),
   patch: (path, body, opts) => request(path, { ...opts, method: 'PATCH', body }),
   delete: (path, opts) => request(path, { ...opts, method: 'DELETE' }),
-};  
+};
