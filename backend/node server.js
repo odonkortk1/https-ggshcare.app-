@@ -1,6 +1,5 @@
 ﻿import 'dotenv/config';
 import express from 'express';
-import cors from 'cors';
 import './db/index.js';
 
 import clientAuthRoutes from './routes/clientAuth.js';
@@ -12,12 +11,21 @@ import paymentRoutes from './routes/payments.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Allow all origins to resolve deployment CORS issues
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// Dynamically reflect the request origin to allow credentials safely
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use('/api/payments/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
