@@ -1,4 +1,4 @@
-﻿const API_BASE = import.meta.env.VITE_API_URL || '';
+﻿const API_BASE = import.meta.env.VITE_API_URL || 'https://https-ggshcare-app.onrender.com/api';
 
 function getStaffToken() {
   try {
@@ -46,4 +46,4 @@ export const api = {
   put: (path, body, opts) => request(path, { ...opts, method: 'PUT', body }),
   patch: (path, body, opts) => request(path, { ...opts, method: 'PATCH', body }),
   delete: (path, opts) => request(path, { ...opts, method: 'DELETE' }),
-};
+};  
