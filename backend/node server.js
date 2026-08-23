@@ -12,11 +12,22 @@ import paymentRoutes from './routes/payments.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// In production, set ALLOWED_ORIGIN to your deployed frontend's URL
-// (e.g. https://ggsh-canteen.vercel.app). Falls back to allowing all
-// origins for local development.
-const allowedOrigin = process.env.ALLOWED_ORIGIN;
-app.use(cors(allowedOrigin ? { origin: allowedOrigin } : {}));
+const allowedOrigins = [
+  process.env.ALLOWED_ORIGIN,
+  'https://https-ggshcare-app-1.onrender.com',
+  'https://ggshcare-app-1.onrender.com',
+  'http://localhost:5173'
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS not allowed for this origin: ' + origin));
+  },
+  credentials: true
+}));
 
 // Stripe webhook needs the raw body for signature verification,
 // so it must be registered BEFORE the global JSON body parser.
