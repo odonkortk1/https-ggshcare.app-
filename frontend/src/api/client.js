@@ -1,22 +1,14 @@
-﻿const API_BASE = import.meta.env.VITE_API_URL || '';
-
-function getStaffToken() {
-  try {
-    const stored = localStorage.getItem('staff_auth');
-    return stored ? JSON.parse(stored)?.token : null;
-  } catch {
-    return null;
-  }
-}
-
-async function request(path, { method = 'GET', body, auth = false } = {}) {
+﻿async function request(path, { method = 'GET', body, auth = false } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) {
     const token = getStaffToken();
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const url = API_BASE ? `${API_BASE}${cleanPath}` : cleanPath;
+
+  const res = await fetch(url, {
     method,
     headers,
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -36,11 +28,3 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
 
   return { data };
 }
-
-export const api = {
-  get: (path, opts) => request(path, { ...opts, method: 'GET' }),
-  post: (path, body, opts) => request(path, { ...opts, method: 'POST', body }),
-  put: (path, body, opts) => request(path, { ...opts, method: 'PUT', body }),
-  patch: (path, body, opts) => request(path, { ...opts, method: 'PATCH', body }),
-  delete: (path, opts) => request(path, { ...opts, method: 'DELETE' }),
-};
