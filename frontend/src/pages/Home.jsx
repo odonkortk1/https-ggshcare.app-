@@ -20,7 +20,7 @@ const ADDRESS = "GW-0093-9160, Wachild Estate, Sapeiman";
 export default function Home() {
   const { toast } = useToast();
   const { client, logoutClient } = useClientAuth();
-  const { staff } = useStaffAuth();
+  const { staff, logoutStaff } = useStaffAuth();
   const isAdmin = staff?.role === "admin";
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -182,13 +182,23 @@ export default function Home() {
             {staff && !isAdmin && (
               <Link to="/orders"><Button variant="outline" size="sm" className="rounded-full"><ClipboardList className="w-4 h-4 mr-1.5" /> Orders</Button></Link>
             )}
+            {staff && (
+              <div className="flex items-center gap-1">
+                <span className="text-xs font-medium hidden sm:inline">{staff.full_name}</span>
+                <Button variant="ghost" size="icon" className="rounded-full" onClick={logoutStaff} title="Log out">
+                  <LogOut className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
             {client ? (
               <div className="flex items-center gap-1">
                 <span className="text-xs font-medium hidden sm:inline">{client.full_name}</span>
                 <Button variant="ghost" size="icon" className="rounded-full" onClick={logoutClient}><LogOut className="w-4 h-4" /></Button>
               </div>
             ) : (
-              <Link to="/client-login"><Button variant="outline" size="sm" className="rounded-full"><User className="w-4 h-4 mr-1.5" /> Login</Button></Link>
+              !staff && (
+                <Link to="/client-login"><Button variant="outline" size="sm" className="rounded-full"><User className="w-4 h-4 mr-1.5" /> Login</Button></Link>
+              )
             )}
           </div>
         </div>
