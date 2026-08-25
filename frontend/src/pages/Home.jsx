@@ -254,7 +254,7 @@ export default function Home() {
         )}
       </section>
 
-      <footer className="border-t bg-blue-600 text-white">
+      <footer className="mx-3 sm:mx-6 mb-4 rounded-2xl border-t bg-blue-600 text-white overflow-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
           <div className="flex items-center gap-2 mb-3">
             <MapPin className="w-4 h-4" />
