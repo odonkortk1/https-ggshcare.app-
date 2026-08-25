@@ -285,6 +285,9 @@ export default function Home() {
               />
             </div>
           </div>
+          <p className="border-t border-white/20 mt-6 pt-4 text-center text-xs text-blue-50">
+            © 2026 GGSHCANTEEN, All Rights Reserved
+          </p>
         </div>
       </footer>
 
