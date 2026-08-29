@@ -35,7 +35,13 @@ export default function Home() {
 
   useEffect(() => {
     api.get("/api/menu")
-      .then((res) => setItems(res.data))
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setItems(res.data);
+        } else {
+          setItems([]);
+        }
+      })
       .catch(() => toast({ title: "Could not load menu", variant: "destructive" }))
       .finally(() => setLoading(false));
   }, []);
@@ -72,25 +78,33 @@ export default function Home() {
     }
   }, []);
 
-  const counts = items.reduce((acc, i) => {
+  // Safe Category Counting
+  const counts = (items || []).reduce((acc, i) => {
+    if (!i) return acc;
     const cat = i.category || "Uncategorized";
     acc[cat] = (acc[cat] || 0) + 1;
     acc.All = (acc.All || 0) + 1;
     return acc;
   }, {});
 
-  // Handles both PostgreSQL boolean flag `available` and legacy `is_available`
-  const available = items.filter((i) => i.available === true || i.is_available === true || i.available === undefined);
-  const filtered = activeCat === "All" 
-    ? available 
-    : available.filter((i) => i.category?.toLowerCase() === activeCat.toLowerCase());
-  const specials = available.filter((i) => i.is_special || i.special);
+  // Safe PostgreSQL & SQLite property checking
+  const available = (items || []).filter((i) => {
+    if (!i) return false;
+    return i.available === true || i.is_available === true || i.available === undefined;
+  });
+
+  const filtered = activeCat === "All"
+    ? available
+    : available.filter((i) => i.category && i.category.toLowerCase() === activeCat.toLowerCase());
+
+  const specials = available.filter((i) => i.is_special === true || i.special === true);
 
   const addToCart = (item) => {
+    if (!item) return;
     setCart((prev) => {
       const found = prev.find((c) => c.name === item.name);
       if (found) return prev.map((c) => c.name === item.name ? { ...c, quantity: c.quantity + 1 } : c);
-      return [...prev, { name: item.name, price: item.price, quantity: 1 }];
+      return [...prev, { name: item.name, price: Number(item.price || 0), quantity: 1 }];
     });
     toast({ title: `${item.name} added`, duration: 1500 });
   };
@@ -121,7 +135,7 @@ export default function Home() {
         setLastOrder(res.data);
         if (ggshPayment) {
           setGgshPhone(client_phone || "");
-          setGgshTotal(res.data.total);
+          setGgshTotal(res.data.total || res.data.total_amount || 0);
           setGgshOpen(true);
           toast({ title: "Order placed!", description: "Dial the USSD code to complete payment." });
         } else {
@@ -300,7 +314,7 @@ export default function Home() {
           <Button onClick={() => setCartOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg h-12 px-6">
             <ShoppingBag className="w-5 h-5 mr-2" /> View Cart
             <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">
-              {cart.reduce((s, i) => s + i.quantity, 0)} . {"\u20B5"}{cart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)}
+              {cart.reduce((s, i) => s + (i.quantity || 0), 0)} . {"\u20B5"}{cart.reduce((s, i) => s + Number(i.price || 0) * (i.quantity || 0), 0).toFixed(2)}
             </span>
           </Button>
         </div>
