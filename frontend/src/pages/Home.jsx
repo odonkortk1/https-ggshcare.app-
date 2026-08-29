@@ -73,14 +73,18 @@ export default function Home() {
   }, []);
 
   const counts = items.reduce((acc, i) => {
-    acc[i.category] = (acc[i.category] || 0) + 1;
+    const cat = i.category || "Uncategorized";
+    acc[cat] = (acc[cat] || 0) + 1;
     acc.All = (acc.All || 0) + 1;
     return acc;
   }, {});
 
-  const available = items.filter((i) => i.is_available);
-  const filtered = activeCat === "All" ? available : available.filter((i) => i.category === activeCat);
-  const specials = available.filter((i) => i.is_special);
+  // Handles both PostgreSQL boolean flag `available` and legacy `is_available`
+  const available = items.filter((i) => i.available === true || i.is_available === true || i.available === undefined);
+  const filtered = activeCat === "All" 
+    ? available 
+    : available.filter((i) => i.category?.toLowerCase() === activeCat.toLowerCase());
+  const specials = available.filter((i) => i.is_special || i.special);
 
   const addToCart = (item) => {
     setCart((prev) => {
@@ -310,7 +314,7 @@ export default function Home() {
             <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Order placed, {lastOrder.customer_name}!</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Pickup at the counter. Total {"\u20B5"}{lastOrder.total.toFixed(2)}.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Pickup at the counter. Total {"\u20B5"}{Number(lastOrder.total || lastOrder.total_amount || 0).toFixed(2)}.</p>
               <Button variant="link" className="h-auto p-0 mt-1 text-xs text-blue-700" onClick={() => { setLastOrder(null); setCartOpen(false); }}>Dismiss</Button>
             </div>
           </div>
