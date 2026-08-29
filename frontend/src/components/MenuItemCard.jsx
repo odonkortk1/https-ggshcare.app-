@@ -2,44 +2,42 @@
 import { Plus, Clock, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80";
+
 export default function MenuItemCard({ item, onAdd }) {
   if (!item) return null;
 
   // Safe numerical parsing for PostgreSQL numeric strings
   const price = Number(item.price || 0).toFixed(2);
 
-  // Fallback checks for PostgreSQL vs SQLite field names
-  const imageUrl = item.image_url || item.imageUrl || "";
+  // Fallback checks across all database image property keys
+  const rawImage = item.image_url || item.imageUrl || item.image;
+  const imageUrl = (rawImage && rawImage.trim() !== "") ? rawImage : DEFAULT_IMAGE;
+
   const isAvailable = item.available ?? item.is_available ?? true;
   const isSpecial = item.is_special || item.special || false;
 
   return (
     <div className="group relative overflow-hidden rounded-2xl bg-card border border-border/60 shadow-sm hover:shadow-md transition-all duration-300">
       <div className="relative h-44 overflow-hidden bg-muted">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={item.name || "Menu Item"}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            onError={(e) => {
-              e.currentTarget.style.display = "none";
-            }}
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground bg-muted">
-            No image
-          </div>
-        )}
+        <img
+          src={imageUrl}
+          alt={item.name || "Menu Item"}
+          loading="lazy"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => {
+            e.currentTarget.src = DEFAULT_IMAGE;
+          }}
+        />
 
         {isSpecial && (
-          <span className="absolute top-3 left-3 bg-blue-600 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-sm">
+          <span className="absolute top-3 left-3 bg-blue-600 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full shadow-sm z-10">
             Daily Special
           </span>
         )}
 
         {!isAvailable && (
-          <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/70 flex items-center justify-center z-10">
             <span className="text-sm font-medium text-muted-foreground">Out of stock</span>
           </div>
         )}
