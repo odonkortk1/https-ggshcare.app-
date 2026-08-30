@@ -2,7 +2,7 @@
   "name": "ggsh-canteen-backend",
   "version": "1.0.0",
   "type": "module",
-  "description": "Standalone backend for GGSH Canteen ordering app - no Base44 dependency",
+  "description": "Standalone backend for GGSH Canteen ordering app using Turso",
   "main": "server.js",
   "engines": {
     "node": ">=22.5.0"
@@ -13,12 +13,12 @@
     "seed": "node db/seed.js"
   },
   "dependencies": {
+    "@libsql/client": "^0.15.15",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "pg": "^8.23.0",
     "stripe": "^14.21.0",
     "uuid": "^9.0.1"
   }
