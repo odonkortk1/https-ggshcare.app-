@@ -72,13 +72,17 @@ export default function Home() {
     }
   }, []);
 
-  const counts = items.reduce((acc, i) => {
+  // Fixed: compute `available` first, then derive category counts from it
+  // so the badge numbers (e.g. "Lunch 2") always match what's actually shown.
+  // Previously `counts` was computed from all `items` regardless of
+  // is_available, which caused a mismatch when items were toggled off.
+  const available = items.filter((i) => i.is_available);
+  const counts = available.reduce((acc, i) => {
     acc[i.category] = (acc[i.category] || 0) + 1;
     acc.All = (acc.All || 0) + 1;
     return acc;
   }, {});
 
-  const available = items.filter((i) => i.is_available);
   const filtered = activeCat === "All" ? available : available.filter((i) => i.category === activeCat);
   const specials = available.filter((i) => i.is_special);
 
