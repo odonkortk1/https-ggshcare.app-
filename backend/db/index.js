@@ -1,64 +1,104 @@
-import pkg from 'pg';
+import { createClient } from '@libsql/client';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const { Pool } = pkg;
+const url = process.env.TURSO_DATABASE_URL;
+const authToken = process.env.TURSO_AUTH_TOKEN;
 
-// Create PostgreSQL Connection Pool
-export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+if (!url) {
+  console.error('FATAL DB ERROR: TURSO_DATABASE_URL environment variable is missing.');
+}
+
+const db = createClient({
+  url: url || 'file:local.db',
+  authToken: authToken || undefined,
 });
 
-async function initDB() {
+export async function initSchema() {
   try {
-    // 1. Create menu_items table
-    await pool.query(`
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS clients (
+        id TEXT PRIMARY KEY,
+        phone_number TEXT UNIQUE NOT NULL,
+        pin_hash TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS staff (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        pin_hash TEXT NOT NULL,
+        full_name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'staff',
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS menu_items (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        category VARCHAR(100) NOT NULL,
-        price NUMERIC(10,2) NOT NULL,
-        available BOOLEAN DEFAULT true,
-        image_url TEXT
-      );
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        price REAL NOT NULL,
+        category TEXT NOT NULL,
+        image_url TEXT,
+        available INTEGER DEFAULT 1,
+        is_available INTEGER DEFAULT 1,
+        is_special INTEGER DEFAULT 0
+      )
     `);
 
-    // 2. Create orders table
-    await pool.query(`
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS orders (
-        id SERIAL PRIMARY KEY,
-        customer_name VARCHAR(255),
+        id TEXT PRIMARY KEY,
+        customer_name TEXT,
         items TEXT NOT NULL,
-        total_amount NUMERIC(10,2) NOT NULL,
-        status VARCHAR(50) DEFAULT 'New',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+        total REAL NOT NULL DEFAULT 0,
+        total_amount REAL NOT NULL DEFAULT 0,
+        status TEXT DEFAULT 'pending',
+        pickup_note TEXT,
+        payment_method TEXT,
+        client_phone TEXT,
+        payment_reference TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
     `);
 
-    // 3. Seed menu items ONLY if table is empty
-    const res = await pool.query('SELECT COUNT(*) FROM menu_items');
-    const itemCount = parseInt(res.rows[0].count, 10);
+    const result = await db.execute('SELECT COUNT(*) AS count FROM menu_items');
+    const itemCount = Number(result.rows[0]?.count || 0);
 
     if (itemCount === 0) {
-      console.log('Database table empty. Seeding initial menu data...');
-      await pool.query(`
-        INSERT INTO menu_items (name, category, price, available) VALUES
-        ('Jollof Rice with Chicken', 'Lunch', 35.00, true),
-        ('Fried Rice with Fish', 'Lunch', 40.00, true),
-        ('Egg Sandwich & Tea', 'Breakfast', 20.00, true),
-        ('Fresh Fruit Juice', 'Beverages', 15.00, true);
-      `);
+      await db.batch([
+        {
+          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
+          args: ['menu-1', 'Jollof Rice with Chicken', 'Lunch', 35, 1, 1],
+        },
+        {
+          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
+          args: ['menu-2', 'Fried Rice with Fish', 'Lunch', 40, 1, 1],
+        },
+        {
+          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
+          args: ['menu-3', 'Egg Sandwich & Tea', 'Breakfast', 20, 1, 1],
+        },
+        {
+          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
+          args: ['menu-4', 'Fresh Fruit Juice', 'Beverages', 15, 1, 1],
+        },
+      ]);
       console.log('Default menu items seeded successfully.');
-    } else {
-      console.log(`PostgreSQL Connected: Loaded ${itemCount} persistent menu items.`);
     }
+
+    console.log(`Turso database connected: ${itemCount} menu items loaded.`);
   } catch (err) {
-    console.error('Error initializing PostgreSQL database:', err.message);
+    const errorDetail = err?.message || err?.cause?.message || String(err);
+    console.error('Error initializing Turso database schema:', errorDetail);
+    throw err;
   }
 }
 
-initDB();
-
-export default pool;
+export default db;
