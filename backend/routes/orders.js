@@ -1,45 +1,40 @@
 import express from 'express';
-import pool from '../db/index.js';
+import db from '../db/index.js';
 
 const router = express.Router();
 
-// GET all orders
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM orders ORDER BY created_at DESC');
-    res.json(rows);
+    const result = await db.execute('SELECT * FROM orders ORDER BY created_at DESC');
+    res.json(result.rows);
   } catch (err) {
     console.error('Error fetching orders:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// POST new order
 router.post('/', async (req, res) => {
-  const { customer_name, items, total_amount, status = 'New' } = req.body;
+  const { customer_name, items, total_amount, total, status = 'New', pickup_note = '', payment_method = '', client_phone = '' } = req.body;
+  if (!items?.length || total_amount == null && total == null) return res.status(400).json({ error: 'items and total amount are required' });
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO orders (customer_name, items, total_amount, status) 
-       VALUES ($1, $2, $3, $4) RETURNING *`,
-      [customer_name, JSON.stringify(items), total_amount, status]
-    );
-    res.status(201).json(rows[0]);
+    const id = crypto.randomUUID();
+    const amount = Number(total ?? total_amount);
+    const result = await db.execute({
+      sql: `INSERT INTO orders (id, customer_name, items, total, total_amount, status, pickup_note, payment_method, client_phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+      args: [id, customer_name || '', JSON.stringify(items), amount, amount, status, pickup_note, payment_method, client_phone],
+    });
+    res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// PATCH/PUT update order status
 router.patch('/:id/status', async (req, res) => {
-  const { id } = req.params;
   const { status } = req.body;
   try {
-    const { rows } = await pool.query(
-      'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
-      [status, id]
-    );
-    if (rows.length === 0) return res.status(404).json({ error: 'Order not found' });
-    res.json(rows[0]);
+    const result = await db.execute({ sql: 'UPDATE orders SET status = ? WHERE id = ? RETURNING *', args: [status, req.params.id] });
+    if (!result.rows.length) return res.status(404).json({ error: 'Order not found' });
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
