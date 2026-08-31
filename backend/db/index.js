@@ -74,20 +74,36 @@ export async function initSchema() {
     if (itemCount === 0) {
       await db.batch([
         {
-          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
-          args: ['menu-1', 'Jollof Rice with Chicken', 'Lunch', 35, 1, 1],
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-1', 'Sobolo Drink', 'Refreshing hibiscus infusion with ginger.', 'Beverages', 5, 1, 1, 0],
         },
         {
-          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
-          args: ['menu-2', 'Fried Rice with Fish', 'Lunch', 40, 1, 1],
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-2', 'Ampesi & Palava Sauce', 'Slice Yam or Plantain with palava sauce, fish and egg', 'Lunch', 45, 1, 1, 0],
         },
         {
-          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
-          args: ['menu-3', 'Egg Sandwich & Tea', 'Breakfast', 20, 1, 1],
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-3', 'Banku & Okro Stew', 'Traditional banku served with okro stew', 'Lunch', 35, 1, 1, 0],
         },
         {
-          sql: `INSERT INTO menu_items (id, name, category, price, available, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
-          args: ['menu-4', 'Fresh Fruit Juice', 'Beverages', 15, 1, 1],
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-4', 'Banku & Tilapia', 'Traditional banku served with grilled tilapia and pepper sauce.', 'Lunch', 50, 1, 1, 1],
+        },
+        {
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-5', 'Fried Rice', 'A flavorful plate of wok-fried rice tossed with tender vegetables, savory seasoning...', 'Lunch', 50, 1, 1, 1],
+        },
+        {
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-6', 'Jollof Rice', 'Rice cooked with a distinct deep, savory flavor, aromatic spices...', 'Lunch', 50, 1, 1, 1],
+        },
+        {
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-7', 'Waakye', 'Rice and tender beans simmered with dried millet stalks. Served with shito, rich stew...', 'Lunch', 45, 1, 1, 1],
+        },
+        {
+          sql: `INSERT INTO menu_items (id, name, description, category, price, available, is_available, is_special) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: ['menu-8', 'Spring Rolls', 'Crunchy flour wrap filled with a savory mix of finely shredded vegetables and...', 'Snacks', 10, 1, 1, 1],
         },
       ]);
       console.log('Default menu items seeded successfully.');
