@@ -58,8 +58,6 @@
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
@@ -79,8 +77,6 @@
   }
 }
 
-
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -89,4 +85,18 @@
   body {
     @apply bg-background text-foreground font-body;
   }
+}
+
+/* GGSH Canteen copyright */
+footer::after {
+  content: "© 2026 GGSHCANTEEN, All Rights Reserved";
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
 }
