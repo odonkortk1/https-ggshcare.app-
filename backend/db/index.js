@@ -68,6 +68,28 @@ export async function initSchema() {
       )
     `);
 
+    // Migrate older Turso databases that already had an orders table.
+    // CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
+    const orderColumnsResult = await db.execute('PRAGMA table_info(orders)');
+    const orderColumns = new Set(orderColumnsResult.rows.map((row) => row.name));
+    const orderMigrations = [
+      ['total', 'REAL NOT NULL DEFAULT 0'],
+      ['total_amount', 'REAL NOT NULL DEFAULT 0'],
+      ['status', "TEXT DEFAULT 'pending'"],
+      ['pickup_note', 'TEXT'],
+      ['payment_method', 'TEXT'],
+      ['client_phone', 'TEXT'],
+      ['payment_reference', 'TEXT'],
+      ['created_at', 'TEXT DEFAULT CURRENT_TIMESTAMP'],
+    ];
+
+    for (const [column, definition] of orderMigrations) {
+      if (!orderColumns.has(column)) {
+        await db.execute(`ALTER TABLE orders ADD COLUMN ${column} ${definition}`);
+        console.log(`Database migration: added orders.${column}`);
+      }
+    }
+
     const result = await db.execute('SELECT COUNT(*) AS count FROM menu_items');
     const itemCount = Number(result.rows[0]?.count || 0);
 
