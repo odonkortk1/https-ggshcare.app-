@@ -1,4 +1,4 @@
-﻿const API_BASE = import.meta.env.VITE_API_URL || 'https://https-ggshcare-app.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://https-ggshcare-app.onrender.com';
 
 function getStaffToken() {
   try {
@@ -16,15 +16,11 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
-  // Ensure path formatting does not break full URLs
+  // API routes in the app already include /api. Normalize the configured
+  // base URL so both https://host and https://host/api work correctly.
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  
-  // Construct absolute URL safely
-  let url = cleanPath;
-  if (API_BASE) {
-    const base = API_BASE.replace(/\/+$/, ''); // Remove trailing slashes from base
-    url = `${base}${cleanPath}`;
-  }
+  const base = API_BASE.replace(/\/+$/, '').replace(/\/api$/, '');
+  const url = `${base}${cleanPath}`;
 
   const res = await fetch(url, {
     method,
