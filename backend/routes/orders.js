@@ -1,10 +1,13 @@
 import express from 'express';
 import { randomUUID } from 'node:crypto';
 import db from '../db/index.js';
+import { requireStaff } from './middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/', async (req, res) => {
+// Order creation remains public for customers. Reading and updating orders
+// requires an authenticated staff JWT.
+router.get('/', requireStaff, async (req, res) => {
   try {
     const result = await db.execute('SELECT * FROM orders ORDER BY created_at DESC');
     res.json(result.rows);
@@ -14,7 +17,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireStaff, async (req, res) => {
   try {
     const result = await db.execute({
       sql: 'SELECT * FROM orders WHERE id = ?',
@@ -84,7 +87,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.patch('/:id/status', async (req, res) => {
+router.patch('/:id/status', requireStaff, async (req, res) => {
   const { status } = req.body || {};
   if (!status) return res.status(400).json({ error: 'Status is required' });
 
