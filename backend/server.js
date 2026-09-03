@@ -11,13 +11,31 @@ import paymentRoutes from './routes/payments.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// CORS_ORIGIN may contain one or more comma-separated frontend origins.
+// When it is not configured, keep local development convenient by reflecting
+// the requesting origin. Production deployments should set CORS_ORIGIN.
+const configuredOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin) res.setHeader('Access-Control-Allow-Origin', origin);
+  const allowOrigin = configuredOrigins.length === 0
+    ? origin
+    : configuredOrigins.includes(origin);
+
+  if (allowOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  if (req.method === 'OPTIONS') {
+    return allowOrigin ? res.sendStatus(204) : res.sendStatus(403);
+  }
   next();
 });
 
