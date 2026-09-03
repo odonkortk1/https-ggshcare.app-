@@ -38,6 +38,12 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
     throw err;
   }
 
+  // Keep the menu contract consistent for the frontend. Some deployments or
+  // API proxies may wrap rows in { rows: [...] }; Home expects an array.
+  if (cleanPath === '/api/menu') {
+    data = Array.isArray(data) ? data : Array.isArray(data?.rows) ? data.rows : [];
+  }
+
   return { data };
 }
 
