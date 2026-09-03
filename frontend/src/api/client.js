@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'https://https-ggshcare-app-065u.onrender.com';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://ggsh-canteen-api.onrender.com';
 
 function getStaffToken() {
   try {
