@@ -72,10 +72,6 @@ export default function Home() {
     }
   }, []);
 
-  // Fixed: compute `available` first, then derive category counts from it
-  // so the badge numbers (e.g. "Lunch 2") always match what's actually shown.
-  // Previously `counts` was computed from all `items` regardless of
-  // is_available, which caused a mismatch when items were toggled off.
   const available = items.filter((i) => i.is_available);
   const counts = available.reduce((acc, i) => {
     acc[i.category] = (acc[i.category] || 0) + 1;
@@ -110,25 +106,34 @@ export default function Home() {
     }
     if (cashPayment || ggshPayment) {
       setSubmitting(true);
-      const orderItems = cart.map((c) => ({ name: c.name, price: c.price, quantity: c.quantity }));
-      setCart([]); setCartOpen(false);
+      const orderItems = cart.map((c) => ({ name: c.name, price: Number(c.price), quantity: Number(c.quantity) }));
       try {
         const res = await api.post("/api/orders", {
-          customer_name, items: orderItems, pickup_note,
+          customer_name: customer_name || "",
+          items: orderItems,
+          total_amount: orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+          pickup_note: pickup_note || "",
           payment_method: ggshPayment ? "ggsh_ussd" : "cash",
           client_phone: client_phone || "",
         });
         setLastOrder(res.data);
+        setCart([]);
+        setCartOpen(false);
         if (ggshPayment) {
           setGgshPhone(client_phone || "");
-          setGgshTotal(res.data.total);
+          setGgshTotal(Number(res.data.total ?? res.data.total_amount ?? 0));
           setGgshOpen(true);
           toast({ title: "Order placed!", description: "Dial the USSD code to complete payment." });
         } else {
           toast({ title: "Order confirmed!", description: "Pay at the pickup counter. Your order is being tracked." });
         }
-      } catch {
-        toast({ title: "Order failed", description: "Please try again.", variant: "destructive" });
+      } catch (err) {
+        console.error("Order submission failed:", err);
+        toast({
+          title: "Order failed",
+          description: err?.message || "Please try again. If this continues, contact support.",
+          variant: "destructive",
+        });
       } finally {
         setSubmitting(false);
       }
@@ -146,8 +151,9 @@ export default function Home() {
       } else {
         throw new Error("No checkout URL returned");
       }
-    } catch {
-      toast({ title: "Checkout failed", description: "Please try again.", variant: "destructive" });
+    } catch (err) {
+      console.error("Checkout failed:", err);
+      toast({ title: "Checkout failed", description: err?.message || "Please try again.", variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
@@ -272,51 +278,34 @@ export default function Home() {
                   <Phone className="w-3.5 h-3.5" /> {CONTACT_PHONE}
                 </a>
               </p>
-              <a href={MAP_LINK} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm" className="bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white">
-                  <MapPin className="w-3.5 h-3.5 mr-1.5" /> Get Directions
-                </Button>
-              </a>
+              <a href={MAP_LINK} target="_blank" rel="noreferrer" className="text-sm text-blue-50 hover:text-white hover:underline">Open in Google Maps</a>
             </div>
-            <div className="rounded-lg overflow-hidden border border-white/20 h-24 max-w-xs md:ml-auto w-full">
-              <iframe
-                title="GGSH Canteen location"
-                src={MAP_EMBED}
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                loading="lazy"
-              />
+            <div className="rounded-2xl overflow-hidden border border-white/20 h-48">
+              <iframe title="GGSH Canteen location" src={MAP_EMBED} className="w-full h-full border-0" loading="lazy" />
             </div>
           </div>
         </div>
       </footer>
 
       {cart.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
-          <Button onClick={() => setCartOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg h-12 px-6">
-            <ShoppingBag className="w-5 h-5 mr-2" /> View Cart
-            <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">
-              {cart.reduce((s, i) => s + i.quantity, 0)} . {"\u20B5"}{cart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)}
-            </span>
-          </Button>
-        </div>
+        <button onClick={() => setCartOpen(true)} className="fixed bottom-5 right-5 z-40 flex items-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-full shadow-xl hover:bg-blue-700 transition-colors">
+          <ShoppingBag className="w-5 h-5" />
+          <span className="font-semibold">Cart ({cart.reduce((s, i) => s + i.quantity, 0)})</span>
+          <span className="font-bold">GH₵ {cart.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)}</span>
+        </button>
       )}
 
-      <CartDrawer open={cartOpen} onOpenChange={setCartOpen} items={cart} onRemove={removeFromCart} onQtyChange={changeQty} onPlaceOrder={placeOrder} submitting={submitting} />
+      <CartDrawer
+        open={cartOpen}
+        onOpenChange={setCartOpen}
+        cart={cart}
+        onChangeQty={changeQty}
+        onRemove={removeFromCart}
+        onPlaceOrder={placeOrder}
+        submitting={submitting}
+        client={client}
+      />
 
-      {lastOrder && (
-        <div className="fixed bottom-4 right-4 left-4 sm:left-auto z-50 max-w-sm bg-card border border-blue-200 shadow-lg rounded-2xl p-4 animate-in slide-in-from-bottom-4">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold">Order placed, {lastOrder.customer_name}!</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Pickup at the counter. Total {"\u20B5"}{lastOrder.total.toFixed(2)}.</p>
-              <Button variant="link" className="h-auto p-0 mt-1 text-xs text-blue-700" onClick={() => { setLastOrder(null); setCartOpen(false); }}>Dismiss</Button>
-            </div>
-          </div>
-        </div>
-      )}
       <GGSHDialog open={ggshOpen} onOpenChange={setGgshOpen} phone={ggshPhone} total={ggshTotal} />
     </div>
   );
