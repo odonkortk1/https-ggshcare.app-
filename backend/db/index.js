@@ -72,6 +72,7 @@ export async function initSchema() {
     // CREATE TABLE IF NOT EXISTS does not add columns to an existing table.
     const orderColumnsResult = await db.execute('PRAGMA table_info(orders)');
     const orderColumns = new Set(orderColumnsResult.rows.map((row) => row.name));
+
     const orderMigrations = [
       ['total', 'REAL NOT NULL DEFAULT 0'],
       ['total_amount', 'REAL NOT NULL DEFAULT 0'],
@@ -80,7 +81,6 @@ export async function initSchema() {
       ['payment_method', 'TEXT'],
       ['client_phone', 'TEXT'],
       ['payment_reference', 'TEXT'],
-      ['created_at', 'TEXT DEFAULT CURRENT_TIMESTAMP'],
     ];
 
     for (const [column, definition] of orderMigrations) {
@@ -88,6 +88,14 @@ export async function initSchema() {
         await db.execute(`ALTER TABLE orders ADD COLUMN ${column} ${definition}`);
         console.log(`Database migration: added orders.${column}`);
       }
+    }
+
+    // SQLite/Turso does not allow ADD COLUMN with a non-constant default such
+    // as CURRENT_TIMESTAMP. Add the column without a default, then backfill it.
+    if (!orderColumns.has('created_at')) {
+      await db.execute('ALTER TABLE orders ADD COLUMN created_at TEXT');
+      await db.execute("UPDATE orders SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL");
+      console.log('Database migration: added orders.created_at');
     }
 
     const result = await db.execute('SELECT COUNT(*) AS count FROM menu_items');
