@@ -12,8 +12,8 @@ export default function CartDrawer({ open, onOpenChange, items = [], onRemove, o
   const [phone, setPhone] = useState("");
   const [payMethod, setPayMethod] = useState("cash");
   const [diningOption, setDiningOption] = useState(null); // "takeaway" | "dine_in"
-  
-  // Safe calculation guard against undefined or missing item properties
+
+  // Safely guard array operations against undefined/null props
   const safeItems = Array.isArray(items) ? items : [];
   const total = safeItems.reduce((s, i) => s + (i?.price || 0) * (i?.quantity || 1), 0);
 
